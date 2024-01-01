@@ -1755,6 +1755,7 @@ public partial class MainWindow : Form
 
     public void Protocol_SelectedIndexChanged(SwitchProtocol protocol)
     {
+        Protocol_dropdown.SelectedIndex = (int)protocol;
         Config.Protocol = protocol;
         ConnectionConfig.Protocol = protocol;
         if (protocol is SwitchProtocol.USB)

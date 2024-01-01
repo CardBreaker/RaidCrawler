@@ -1,4 +1,4 @@
-﻿using RaidCrawler.WinForms.CustomUI;
+using RaidCrawler.WinForms.CustomUI;
 
 namespace RaidCrawler.WinForms
 {
@@ -903,11 +903,11 @@ namespace RaidCrawler.WinForms
             // Protocol_dropdown
             // 
             Protocol_dropdown.FormattingEnabled = true;
-            Protocol_dropdown.Items.AddRange(new object[] { SysBot.Base.SwitchProtocol.WiFi, SysBot.Base.SwitchProtocol.USB });
-            Protocol_dropdown.Location = new Point(158, 33);
+            Protocol_dropdown.Items.AddRange(new object[] { "Wi-Fi", "USB" });
+            Protocol_dropdown.Location = new Point(138, 33);
             Protocol_dropdown.MaxDropDownItems = 2;
             Protocol_dropdown.Name = "Protocol_dropdown";
-            Protocol_dropdown.Size = new Size(48, 23);
+            Protocol_dropdown.Size = new Size(68, 23);
             Protocol_dropdown.TabIndex = 137;
             Protocol_dropdown.Text = "w";
             Protocol_dropdown.SelectedIndexChanged += Protocol_dropdown_SelectedIndexChanged;
@@ -930,16 +930,16 @@ namespace RaidCrawler.WinForms
             extrasPanel.Controls.Add(DaySkipSuccessRate);
             extrasPanel.Controls.Add(SearchTime);
             extrasPanel.Controls.Add(LabelLoadedRaids);
-            extrasPanel.Location = new Point(223, 397);
+            extrasPanel.Location = new Point(223, 380);
             extrasPanel.Name = "extrasPanel";
-            extrasPanel.Size = new Size(350, 55);
+            extrasPanel.Size = new Size(350, 72);
             extrasPanel.TabIndex = 135;
             // 
             // Streak
             // 
             Streak.AutoSize = true;
             Streak.Font = new Font("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point);
-            Streak.Location = new Point(263, 37);
+            Streak.Location = new Point(263, 54);
             Streak.Name = "Streak";
             Streak.Size = new Size(51, 15);
             Streak.TabIndex = 17;
@@ -949,7 +949,7 @@ namespace RaidCrawler.WinForms
             // 
             TotalMiss.AutoSize = true;
             TotalMiss.Font = new Font("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point);
-            TotalMiss.Location = new Point(133, 37);
+            TotalMiss.Location = new Point(3, 54);
             TotalMiss.Name = "TotalMiss";
             TotalMiss.Size = new Size(74, 15);
             TotalMiss.TabIndex = 16;

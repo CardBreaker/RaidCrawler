@@ -587,12 +587,12 @@ namespace RaidCrawler.WinForms.SubForms
             // 
             this.Protocol_dropdown.FormattingEnabled = true;
             this.Protocol_dropdown.Items.AddRange(new object[] {
-            SysBot.Base.SwitchProtocol.WiFi,
-            SysBot.Base.SwitchProtocol.USB});
-            this.Protocol_dropdown.Location = new System.Drawing.Point(157, 161);
+                "Wi-Fi",
+                "USB"});
+            this.Protocol_dropdown.Location = new System.Drawing.Point(137, 161);
             this.Protocol_dropdown.MaxDropDownItems = 2;
             this.Protocol_dropdown.Name = "Protocol_dropdown";
-            this.Protocol_dropdown.Size = new System.Drawing.Size(48, 23);
+            this.Protocol_dropdown.Size = new System.Drawing.Size(68, 23);
             this.Protocol_dropdown.TabIndex = 111;
             this.Protocol_dropdown.Text = "w";
             Protocol_dropdown.SelectedValueChanged += Protocol_Changed;
