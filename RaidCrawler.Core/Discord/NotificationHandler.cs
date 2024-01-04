@@ -10,18 +10,23 @@ using static System.Net.WebRequestMethods;
 
 namespace RaidCrawler.Core.Discord;
 
-public class NotificationHandler(IWebhookConfig config)
+public class NotificationHandler
 {
     protected readonly HttpClient _client = new();
-    private readonly string[]? _discordWebhooks = config.EnableNotification ? config.DiscordWebhook.Split(',') : null;
-    protected virtual string[]? DiscordWebhooks {  get {  return _discordWebhooks; } }
-    protected virtual string MessageContent { get { return config.DiscordMessageContent; } }
+    protected IWebhookConfig _config;
+    protected virtual string[]? DiscordWebhooks {  get {  return _config.EnableNotification ? _config.DiscordWebhook.Split(',') : null; } }
+    protected virtual string MessageContent { get { return _config.DiscordMessageContent; } }
+
+    public NotificationHandler(in IWebhookConfig config)
+    {
+        _config = config;
+    }
 
     public virtual async Task SendNotification(ITeraRaid encounter, Raid raid, RaidFilter filter, string time, IReadOnlyList<(int, int, int)> RewardsList,
         string hexColor, string spriteName, CancellationToken token
     )
     {
-        if (DiscordWebhooks is null || !config.EnableNotification)
+        if (DiscordWebhooks is null || !_config.EnableNotification)
             return;
 
         var webhook = GenerateWebhook(encounter, raid, filter, time, RewardsList, hexColor, spriteName);
@@ -32,10 +37,10 @@ public class NotificationHandler(IWebhookConfig config)
 
     public async Task SendErrorNotification(string error, string caption, CancellationToken token)
     {
-        if (DiscordWebhooks is null || !config.EnableNotification)
+        if (DiscordWebhooks is null || !_config.EnableNotification)
             return;
 
-        var instance = config.InstanceName != "" ? $"RaidCrawler {config.InstanceName}" : "RaidCrawler";
+        var instance = _config.InstanceName != "" ? $"RaidCrawler {_config.InstanceName}" : "RaidCrawler";
         var webhook = new
         {
             username = instance,
@@ -59,7 +64,7 @@ public class NotificationHandler(IWebhookConfig config)
 
     public async Task SendScreenshot(ISwitchConnectionAsync nx, CancellationToken token)
     {
-        if (DiscordWebhooks is null || !config.EnableNotification)
+        if (DiscordWebhooks is null || !_config.EnableNotification)
             return;
 
         var data = await nx.PixelPeek(token).ConfigureAwait(false);
@@ -124,7 +129,7 @@ public class NotificationHandler(IWebhookConfig config)
         var extramovesstr = extramoves == string.Empty ? "None" : extramoves;
         var area =
             $"{Areas.GetArea((int)(raid.Area - 1), raid.MapParent)}"
-            + (config.ToggleDen ? $" [Den {raid.Den}]ㅤ" : "ㅤ");
+            + (_config.ToggleDen ? $" [Den {raid.Den}]ㅤ" : "ㅤ");
         var rewards = GetRewards(rewardsList, eventType);
         var scale = blank.Scale;
         var copy = $"{difficulty} {shiny} **{species}{form}** {gender} **{teraemoji}** `{PokeSizeDetailedUtil.GetSizeRating(scale)} ({scale})`\n" +
@@ -136,7 +141,7 @@ public class NotificationHandler(IWebhookConfig config)
         var technicalcopy = $"{encounter.Stars},{shiny},{species},{blank.Form},{blank.Gender},{teratype},{nature},{ability},{blank.Scale},{IVsStringEmoji(ToSpeedLast(blank.IVs), "technicalcopy")}";
         var SuccessWebHook = new
         {
-            username = "RaidCrawler " + config.InstanceName,
+            username = "RaidCrawler " + _config.InstanceName,
             avatar_url = "https://www.serebii.net/scarletviolet/ribbons/mightiestmark.png",
             content = MessageContent,
             embeds = new List<object>
@@ -189,11 +194,11 @@ public class NotificationHandler(IWebhookConfig config)
 
     protected string Difficulty(byte stars, bool isEvent, string eventType)
     {
-        bool enable = eventType == "webhook" ? config.EnableEmoji : eventType == "copy" ? config.CopyEmoji : false;
+        bool enable = eventType == "webhook" ? _config.EnableEmoji : eventType == "copy" ? _config.CopyEmoji : false;
         string emoji = !enable ? ":star:"
-                               : stars == 7 ? config.Emoji["7 Star"]
-                               : isEvent ? config.Emoji["Event Star"]
-                               : config.Emoji["Star"];
+                               : stars == 7 ? _config.Emoji["7 Star"]
+                               : isEvent ? _config.Emoji["Event Star"]
+                               : _config.Emoji["Star"];
 
         return string.Concat(Enumerable.Repeat(emoji, stars));
     }
@@ -201,11 +206,11 @@ public class NotificationHandler(IWebhookConfig config)
     protected string GenderEmoji(int genderInt, string eventType)
     {
         string gender = string.Empty;
-        bool emoji = eventType == "webhook" ? config.EnableEmoji : eventType == "copy" ? config.CopyEmoji : false;
+        bool emoji = eventType == "webhook" ? _config.EnableEmoji : eventType == "copy" ? _config.CopyEmoji : false;
         switch (genderInt)
         {
-            case 0: gender = (emoji ? config.Emoji["Male"] : "♂"); break;
-            case 1: gender = (emoji ? config.Emoji["Female"] : "♀"); break;
+            case 0: gender = (emoji ? _config.Emoji["Male"] : "♂"); break;
+            case 1: gender = (emoji ? _config.Emoji["Female"] : "♀"); break;
             case 2: gender = ""; break;
         }
         return gender;
@@ -254,15 +259,15 @@ public class NotificationHandler(IWebhookConfig config)
             }
         }
 
-        bool emoji = eventType == "webhook" ? config.EnableEmoji : eventType == "copy" ? config.CopyEmoji : false;
-        s += (abilitycapsule > 0) ? (emoji ? $"`{abilitycapsule}`{config.Emoji["Ability Capsule"]} " : $"`{abilitycapsule}` Ability Capsule  ") : "";
-        s += (bottlecap > 0) ? (emoji ? $"`{bottlecap}`{config.Emoji["Bottle Cap"]} " : $"`{bottlecap}` Bottle Cap  ") : "";
-        s += (abilitypatch > 0) ? (emoji ? $"`{abilitypatch}`{config.Emoji["Ability Patch"]} " : $"`{abilitypatch}` Ability Patch  ") : "";
-        s += (sweetherba > 0) ? (emoji ? $"`{sweetherba}`{config.Emoji["Sweet Herba"]} " : $"`{sweetherba}` Sweet Herba  ") : "";
-        s += (saltyherba > 0) ? (emoji ? $"`{saltyherba}`{config.Emoji["Salty Herba"]} " : $"`{saltyherba}` Salty Herba  ") : "";
-        s += (sourherba > 0) ? (emoji ? $"`{sourherba}`{config.Emoji["Sour Herba"]} " : $"`{sourherba}` Sour Herba  ") : "";
-        s += (bitterherba > 0) ? (emoji ? $"`{bitterherba}`{config.Emoji["Bitter Herba"]} " : $"`{bitterherba}` Bitter Herba  ") : "";
-        s += (spicyherba > 0) ? (emoji ? $"`{spicyherba}`{config.Emoji["Spicy Herba"]} " : $"`{spicyherba}` Spicy Herba  ") : "";
+        bool emoji = eventType == "webhook" ? _config.EnableEmoji : eventType == "copy" ? _config.CopyEmoji : false;
+        s += (abilitycapsule > 0) ? (emoji ? $"`{abilitycapsule}`{_config.Emoji["Ability Capsule"]} " : $"`{abilitycapsule}` Ability Capsule  ") : "";
+        s += (bottlecap > 0) ? (emoji ? $"`{bottlecap}`{_config.Emoji["Bottle Cap"]} " : $"`{bottlecap}` Bottle Cap  ") : "";
+        s += (abilitypatch > 0) ? (emoji ? $"`{abilitypatch}`{_config.Emoji["Ability Patch"]} " : $"`{abilitypatch}` Ability Patch  ") : "";
+        s += (sweetherba > 0) ? (emoji ? $"`{sweetherba}`{_config.Emoji["Sweet Herba"]} " : $"`{sweetherba}` Sweet Herba  ") : "";
+        s += (saltyherba > 0) ? (emoji ? $"`{saltyherba}`{_config.Emoji["Salty Herba"]} " : $"`{saltyherba}` Salty Herba  ") : "";
+        s += (sourherba > 0) ? (emoji ? $"`{sourherba}`{_config.Emoji["Sour Herba"]} " : $"`{sourherba}` Sour Herba  ") : "";
+        s += (bitterherba > 0) ? (emoji ? $"`{bitterherba}`{_config.Emoji["Bitter Herba"]} " : $"`{bitterherba}` Bitter Herba  ") : "";
+        s += (spicyherba > 0) ? (emoji ? $"`{spicyherba}`{_config.Emoji["Spicy Herba"]} " : $"`{spicyherba}` Spicy Herba  ") : "";
 
         return s;
     }
@@ -270,28 +275,28 @@ public class NotificationHandler(IWebhookConfig config)
     protected string IVsStringEmoji(int[] ivs, string eventType)
     {
         string s = string.Empty;
-        string spacer = eventType == "technicalcopy" ? "," : config.IVsSpacer;
-        bool emoji = eventType == "webhook" ? config.EnableEmoji : eventType == "copy" ? config.CopyEmoji : false;
-        bool verbose = eventType == "technicalcopy" ? false : config.VerboseIVs;
-        int IVsStyle = eventType == "technicalcopy" ? 2 : config.IVsStyle;
+        string spacer = eventType == "technicalcopy" ? "," : _config.IVsSpacer;
+        bool emoji = eventType == "webhook" ? _config.EnableEmoji : eventType == "copy" ? _config.CopyEmoji : false;
+        bool verbose = eventType == "technicalcopy" ? false : _config.VerboseIVs;
+        int IVsStyle = eventType == "technicalcopy" ? 2 : _config.IVsStyle;
         var stats = new[] { "HP", "Atk", "Def", "SpA", "SpD", "Spe" };
         var iv0 = new[]
         {
-                config.Emoji["Health 0"],
-                config.Emoji["Attack 0"],
-                config.Emoji["Defense 0"],
-                config.Emoji["SpAttack 0"],
-                config.Emoji["SpDefense 0"],
-                config.Emoji["Speed 0"]
+                _config.Emoji["Health 0"],
+                _config.Emoji["Attack 0"],
+                _config.Emoji["Defense 0"],
+                _config.Emoji["SpAttack 0"],
+                _config.Emoji["SpDefense 0"],
+                _config.Emoji["Speed 0"]
             };
         var iv31 = new[]
         {
-                config.Emoji["Health 31"],
-                config.Emoji["Attack 31"],
-                config.Emoji["Defense 31"],
-                config.Emoji["SpAttack 31"],
-                config.Emoji["SpDefense 31"],
-                config.Emoji["Speed 31"]
+                _config.Emoji["Health 31"],
+                _config.Emoji["Attack 31"],
+                _config.Emoji["Defense 31"],
+                _config.Emoji["SpAttack 31"],
+                _config.Emoji["SpDefense 31"],
+                _config.Emoji["Speed 31"]
             };
         for (int i = 0; i < ivs.Length; i++)
         {
@@ -337,12 +342,12 @@ public class NotificationHandler(IWebhookConfig config)
 
     protected string Shiny(bool shiny, bool square, string eventType)
     {
-        bool emoji = eventType == "webhook" ? config.EnableEmoji : eventType == "copy" ? config.CopyEmoji : false;
+        bool emoji = eventType == "webhook" ? _config.EnableEmoji : eventType == "copy" ? _config.CopyEmoji : false;
         string s = string.Empty;
         if (square && shiny)
-            s = $"{(emoji ? config.Emoji["Square Shiny"] : eventType == "technicalcopy" ? 2 : "Square shiny")}";
+            s = $"{(emoji ? _config.Emoji["Square Shiny"] : eventType == "technicalcopy" ? 2 : "Square shiny")}";
         else if (shiny)
-            s = $"{(emoji ? config.Emoji["Shiny"] : eventType == "technicalcopy" ? 1 : "Shiny")}";
+            s = $"{(emoji ? _config.Emoji["Shiny"] : eventType == "technicalcopy" ? 1 : "Shiny")}";
         else
             s = $"{(eventType == "technicalcopy" ? 0 : "")}";
 
@@ -361,5 +366,5 @@ public class NotificationHandler(IWebhookConfig config)
         return res;
     }
 
-    protected string TeraEmoji(string tera, string eventType) => eventType == "webhook" ? (config.EnableEmoji ? config.Emoji[tera] : tera) : eventType == "copy" ? (config.CopyEmoji ? config.Emoji[tera] : tera) : tera;
+    protected string TeraEmoji(string tera, string eventType) => eventType == "webhook" ? (_config.EnableEmoji ? _config.Emoji[tera] : tera) : eventType == "copy" ? (_config.CopyEmoji ? _config.Emoji[tera] : tera) : tera;
 }

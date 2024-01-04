@@ -8,9 +8,10 @@ using System.Text.Json;
 
 namespace RaidCrawler.Core.Discord;
 
-public class FomoNotificationHandler(IWebhookConfig config) : NotificationHandler(config)
+public class FomoNotificationHandler : NotificationHandler
 {
-    private readonly string[]? _fomoWebhooks = config.EnableFomoNotification ? config.DiscordFomoWebhook.Split(',') : null;
-    protected override string[]? DiscordWebhooks { get { return _fomoWebhooks; } }
+    protected override string[]? DiscordWebhooks { get { return _config.EnableFomoNotification ? _config.DiscordFomoWebhook.Split(',') : null; } }
     protected override string MessageContent { get { return string.Empty; } }
+
+    public FomoNotificationHandler(in IWebhookConfig config) : base(in config) { }
 }
