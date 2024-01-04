@@ -1,3 +1,5 @@
+using System.Windows.Forms;
+
 namespace RaidCrawler.WinForms.SubForms;
 
 public partial class EmojiConfig : Form
@@ -115,6 +117,7 @@ public partial class EmojiConfig : Form
         EmojiGrid.AllowUserToOrderColumns = false;
         LoadEmoji(EmojiGrid, _clientConfig.Emoji);
         EnableEmoji(EmojiGrid);
+        EmojiGrid.CurrentCellDirtyStateChanged += DataGridView_CurrentCellDirtyStateChanged;
     }
 
     private void EmojiGrid_Changed(object sender, DataGridViewCellEventArgs e)
@@ -218,5 +221,20 @@ public partial class EmojiConfig : Form
         }
 
         _clientConfig.Emoji = dict;
+    }
+
+    private void DataGridView_CurrentCellDirtyStateChanged(object? sender, EventArgs e)
+    {
+        if (sender == null)
+        {
+            return;
+        }
+
+        var dataGridView = (DataGridView)sender;
+        if (dataGridView.IsCurrentCellDirty)
+        {
+            dataGridView.CommitEdit(DataGridViewDataErrorContexts.Commit);
+            dataGridView.EndEdit();
+        }
     }
 }
