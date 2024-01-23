@@ -1,18 +1,23 @@
 using PKHeX.Core;
 using RaidCrawler.Core.Structures;
+using System.Collections;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 
 namespace RaidCrawler.WinForms.SubForms;
 
 public partial class FilterSettings : Form
 {
-    private readonly List<RaidFilter> filters;
+    private readonly List<RaidFilter> allFilters;
+    private readonly FilteredCollection<RaidFilter> displayFilters;
+
     private readonly BindingSource bs = new();
 
     public FilterSettings(ref List<RaidFilter> filters)
     {
         InitializeComponent();
-        this.filters = filters;
+        allFilters = filters;
+        displayFilters = new FilteredCollection<RaidFilter>(ref allFilters, filter => Regex.IsMatch(filter.Name ?? "", SearchBar.Text, RegexOptions.IgnoreCase));
         Species.DataSource = Enum.GetValues(typeof(Species))
             .Cast<Species>()
             .Where(z => z != PKHeX.Core.Species.MAX_COUNT)
@@ -43,16 +48,31 @@ public partial class FilterSettings : Form
     {
         if (bs.DataSource == null)
         {
-            bs.DataSource = filters;
+            bs.DataSource = displayFilters;
             ActiveFilters.DataSource = bs;
             ActiveFilters.DisplayMember = "Name";
         }
         else
         {
+            // Seems like a .NET bug - ResetBindings() won't do anything even
+            // if the filters changed unless its reference changes.
+            bs.DataSource = null;
             bs.ResetBindings(false);
+
+            if (displayFilters.Count > 0)
+            {
+                bs.DataSource = displayFilters;
+                bs.ResetBindings(false);
+            }
         }
-        for (int i = 0; i < filters.Count; i++)
-            ActiveFilters.SetItemChecked(i, filters[i].Enabled);
+
+        if (displayFilters.Count <= 0)
+        {
+            ActiveFilters.SelectedIndex = -1;
+        }
+
+        for (int i = 0; i < displayFilters.Count; i++)
+            ActiveFilters.SetItemChecked(i, displayFilters[i].Enabled);
     }
 
     public void SelectFilter(RaidFilter filter)
@@ -197,16 +217,16 @@ public partial class FilterSettings : Form
         filter.Enabled = true;
         if (filter.IsFilterSet())
         {
-            for (int i = 0; i < ActiveFilters.Items.Count; i++)
+            for (int i = 0; i < allFilters.Count; i++)
             {
-                var f = filters[i];
+                var f = allFilters[i];
                 if (f.Name != filter.Name)
                     continue;
-                filters.RemoveAt(i);
+                allFilters.RemoveAt(i);
                 break;
             }
 
-            filters.Add(filter);
+            allFilters.Add(filter);
             ResetActiveFilters();
             ActiveFilters.SelectedIndex = ActiveFilters.Items.Count - 1;
         }
@@ -307,11 +327,7 @@ public partial class FilterSettings : Form
 
     private void FilterSettings_FormClosing(object sender, EventArgs e)
     {
-        HashSet<int> indexset = new(ActiveFilters.CheckedIndices.Cast<int>());
-        for (int i = 0; i < filters.Count; i++)
-            filters[i].Enabled = indexset.Contains(i);
-
-        string output = JsonSerializer.Serialize(filters);
+        string output = JsonSerializer.Serialize(allFilters);
         using StreamWriter sw =
             new(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "filters.json"));
         sw.Write(output);
@@ -323,26 +339,31 @@ public partial class FilterSettings : Form
             return;
 
         var idx = ActiveFilters.SelectedIndex;
-        filters.RemoveAt(idx);
+        displayFilters.RemoveAt(idx);
         ResetActiveFilters();
     }
 
     private void ActiveFilters_SelectedIndexChanged(object sender, EventArgs e)
     {
+        RefreshSelectedFilter();
+    }
+
+    private void RefreshSelectedFilter()
+    {
         Remove.Enabled = ActiveFilters.SelectedIndex >= 0;
         if (ActiveFilters.SelectedIndex < 0)
             return;
-        SelectFilter(filters[ActiveFilters.SelectedIndex]);
+        SelectFilter(displayFilters[ActiveFilters.SelectedIndex]);
     }
 
     private void ActiveFilters_ItemCheck(object sender, ItemCheckEventArgs e)
     {
-        filters[e.Index].Enabled = e.NewValue == CheckState.Checked;
+        displayFilters[e.Index].Enabled = e.NewValue == CheckState.Checked;
     }
 
     private void FilterName_TextChanged(object sender, EventArgs e)
     {
-        if (ActiveFilters.SelectedIndex > -1 && FilterName.Text == filters[ActiveFilters.SelectedIndex].Name)
+        if (allFilters.Any(filter => filter.Name == FilterName.Text))
             Add.Text = "Update Filter";
         else
             Add.Text = "Add Filter";
@@ -408,5 +429,67 @@ public partial class FilterSettings : Form
     {
         if (SquareCheck.Checked) { ShinyCheck.Enabled = false; ShinyCheck.Checked = false; }
         else { ShinyCheck.Enabled = true; }
+    }
+
+    private void SearchBar_TextChanged(object sender, EventArgs e)
+    {
+        ResetActiveFilters();
+        RefreshSelectedFilter();
+    }
+}
+
+public class FilteredCollection<T> : IEnumerable<T>
+{
+    private readonly List<T> originalList;
+    private readonly Func<T, bool> filterPredicate;
+
+    public FilteredCollection(ref List<T> originalList, Func<T, bool> filterPredicate)
+    {
+        this.originalList = originalList;
+        this.filterPredicate = filterPredicate;
+    }
+
+    public IEnumerator<T> GetEnumerator()
+    {
+        return originalList.Where(filterPredicate).GetEnumerator();
+    }
+
+    IEnumerator IEnumerable.GetEnumerator()
+    {
+        return GetEnumerator();
+    }
+
+    public int Count => originalList.Count(filterPredicate);
+
+    public bool Add(T item)
+    {
+        originalList.Add(item);
+        return true;
+    }
+
+    public bool Remove(T item)
+    {
+        if (filterPredicate(item))
+        {
+            originalList.Remove(item);
+            return true;
+        }
+        return false;
+    }
+
+    public void RemoveAt(int index)
+    {
+        if (index < this.Count())
+        {
+            Remove(this[index]);
+        }
+    }
+
+    public T this[int index]
+    {
+        get
+        {
+            return originalList.Where(filterPredicate).ElementAt(index);
+        }
     }
 }

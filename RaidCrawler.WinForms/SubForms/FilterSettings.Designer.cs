@@ -1,4 +1,4 @@
-﻿namespace RaidCrawler.WinForms.SubForms
+namespace RaidCrawler.WinForms.SubForms
 {
     partial class FilterSettings
     {
@@ -80,6 +80,8 @@
             SizeBox = new ComboBox();
             SizeCheck = new CheckBox();
             RareVariant = new CheckBox();
+            SearchBarLabel = new Label();
+            SearchBar = new TextBox();
             ((System.ComponentModel.ISupportInitialize)Form).BeginInit();
             PerfectIVFilterGroup.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)IVSPE).BeginInit();
@@ -449,13 +451,31 @@
             TeraType.Name = "TeraType";
             TeraType.Size = new Size(178, 23);
             TeraType.TabIndex = 17;
+            //
+            // SearchBarLabel
+            //
+            SearchBarLabel.AutoSize = true;
+            SearchBarLabel.Location = new Point(305, 26);
+            SearchBarLabel.Name = "SearchBarLabel";
+            SearchBarLabel.Size = new Size(50, 15);
+            SearchBarLabel.TabIndex = 40;
+            SearchBarLabel.Text = "Search:";
+            //
+            // SearchBar
+            //
+            SearchBar.BorderStyle = BorderStyle.FixedSingle;
+            SearchBar.Location = new Point(361, 23);
+            SearchBar.Name = "SearchBar";
+            SearchBar.Size = new Size(129, 23);
+            SearchBar.TabIndex = 41;
+            SearchBar.TextChanged += SearchBar_TextChanged;
             // 
             // ActiveFilters
             // 
             ActiveFilters.FormattingEnabled = true;
-            ActiveFilters.Location = new Point(305, 23);
+            ActiveFilters.Location = new Point(305, 48);
             ActiveFilters.Name = "ActiveFilters";
-            ActiveFilters.Size = new Size(185, 274);
+            ActiveFilters.Size = new Size(185, 249);
             ActiveFilters.TabIndex = 20;
             ActiveFilters.ItemCheck += ActiveFilters_ItemCheck;
             ActiveFilters.DrawItem += ActiveFilters_DrawItem;
@@ -670,6 +690,8 @@
             Controls.Add(Remove);
             Controls.Add(label1);
             Controls.Add(FilterName);
+            Controls.Add(SearchBarLabel);
+            Controls.Add(SearchBar);
             Controls.Add(ActiveFilters);
             Controls.Add(TeraCheck);
             Controls.Add(TeraType);
@@ -758,6 +780,7 @@
         private ComboBox SizeBox;
         private CheckBox SizeCheck;
         private CheckBox RareVariant;
-        //private TextBox textBox1;
+        private Label SearchBarLabel;
+        private TextBox SearchBar;
     }
 }
