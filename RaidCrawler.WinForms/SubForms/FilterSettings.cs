@@ -9,7 +9,7 @@ namespace RaidCrawler.WinForms.SubForms;
 public partial class FilterSettings : Form
 {
     private readonly List<RaidFilter> allFilters;
-    private readonly FilteredCollection<RaidFilter> displayFilters;
+    private readonly RaidFilterCollection displayFilters;
 
     private readonly BindingSource bs = new();
 
@@ -20,18 +20,7 @@ public partial class FilterSettings : Form
     {
         InitializeComponent();
         allFilters = filters;
-        displayFilters = new FilteredCollection<RaidFilter>(ref allFilters, filter =>
-            {
-                try
-                {
-                    return Regex.IsMatch(filter.Name ?? "", SearchBar.Text, RegexOptions.IgnoreCase);
-                }
-                catch (ArgumentException)
-                {
-                    // Invalid regex in search bar - match none
-                    return false;
-                }
-            });
+        displayFilters = new RaidFilterCollection(ref allFilters, SearchBar);
         Species.DataSource = Enum.GetValues(typeof(Species))
             .Cast<Species>()
             .Where(z => z != PKHeX.Core.Species.MAX_COUNT)
@@ -448,20 +437,29 @@ public partial class FilterSettings : Form
     }
 }
 
-public class FilteredCollection<T> : IEnumerable<T>
+public class RaidFilterCollection : IEnumerable<RaidFilter>
 {
-    private readonly List<T> originalList;
-    private readonly Func<T, bool> filterPredicate;
+    private readonly List<RaidFilter> originalList;
+    private readonly TextBox SearchBar;
+    private readonly Func<RaidFilter, bool> filterPredicate;
 
-    public FilteredCollection(ref List<T> originalList, Func<T, bool> filterPredicate)
+    public RaidFilterCollection(ref List<RaidFilter> originalList, TextBox searchBar)
     {
         this.originalList = originalList;
-        this.filterPredicate = filterPredicate;
+        SearchBar = searchBar;
+        filterPredicate = filter => Regex.IsMatch(filter.Name ?? "", SearchBar.Text, RegexOptions.IgnoreCase);
     }
 
-    public IEnumerator<T> GetEnumerator()
+    public IEnumerator<RaidFilter> GetEnumerator()
     {
-        return originalList.Where(filterPredicate).GetEnumerator();
+        try
+        {
+            return originalList.Where(filterPredicate).GetEnumerator();
+        }
+        catch (ArgumentException)
+        {
+            return null;
+        }
     }
 
     IEnumerator IEnumerable.GetEnumerator()
@@ -469,22 +467,30 @@ public class FilteredCollection<T> : IEnumerable<T>
         return GetEnumerator();
     }
 
-    public int Count => originalList.Count(filterPredicate);
+    public int Count
+    {
+        get
+        {
+            try
+            {
+                return originalList.Count(filterPredicate);
+            }
+            catch (ArgumentException)
+            {
+                return 0;
+            }
+        }
+    }
 
-    public bool Add(T item)
+    public bool Add(RaidFilter item)
     {
         originalList.Add(item);
         return true;
     }
 
-    public bool Remove(T item)
+    public bool Remove(RaidFilter item)
     {
-        if (filterPredicate(item))
-        {
-            originalList.Remove(item);
-            return true;
-        }
-        return false;
+        return originalList.Remove(item);
     }
 
     public void RemoveAt(int index)
@@ -495,11 +501,18 @@ public class FilteredCollection<T> : IEnumerable<T>
         }
     }
 
-    public T this[int index]
+    public RaidFilter this[int index]
     {
         get
         {
-            return originalList.Where(filterPredicate).ElementAt(index);
+            try
+            {
+                return originalList.Where(filterPredicate).ElementAt(index);
+            }
+            catch (ArgumentException)
+            {
+                return null;
+            }
         }
     }
 }
