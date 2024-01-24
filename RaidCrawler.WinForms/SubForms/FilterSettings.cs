@@ -13,11 +13,25 @@ public partial class FilterSettings : Form
 
     private readonly BindingSource bs = new();
 
+    private readonly Color SearchActiveColor = Color.Aquamarine;
+    private readonly Color SearchInactiveColor = Color.Empty;
+
     public FilterSettings(ref List<RaidFilter> filters)
     {
         InitializeComponent();
         allFilters = filters;
-        displayFilters = new FilteredCollection<RaidFilter>(ref allFilters, filter => Regex.IsMatch(filter.Name ?? "", SearchBar.Text, RegexOptions.IgnoreCase));
+        displayFilters = new FilteredCollection<RaidFilter>(ref allFilters, filter =>
+            {
+                try
+                {
+                    return Regex.IsMatch(filter.Name ?? "", SearchBar.Text, RegexOptions.IgnoreCase);
+                }
+                catch (ArgumentException)
+                {
+                    // Invalid regex in search bar - match none
+                    return false;
+                }
+            });
         Species.DataSource = Enum.GetValues(typeof(Species))
             .Cast<Species>()
             .Where(z => z != PKHeX.Core.Species.MAX_COUNT)
@@ -37,6 +51,10 @@ public partial class FilterSettings : Form
         SpdComp.SelectedIndex = 0;
         SpeComp.SelectedIndex = 0;
 
+        bs.DataSource = displayFilters;
+        ActiveFilters.DataSource = bs;
+        ActiveFilters.DisplayMember = "Name";
+
         ResetActiveFilters();
         if (ActiveFilters.Items.Count > 0)
             ActiveFilters.SelectedIndex = 0;
@@ -46,25 +64,16 @@ public partial class FilterSettings : Form
 
     public void ResetActiveFilters()
     {
-        if (bs.DataSource == null)
+        // Seems like a .NET bug - ResetBindings() won't do anything even
+        // if the filters changed unless its reference changes.
+        bs.DataSource = null;
+
+        if (displayFilters.Count > 0)
         {
             bs.DataSource = displayFilters;
-            ActiveFilters.DataSource = bs;
-            ActiveFilters.DisplayMember = "Name";
         }
-        else
-        {
-            // Seems like a .NET bug - ResetBindings() won't do anything even
-            // if the filters changed unless its reference changes.
-            bs.DataSource = null;
-            bs.ResetBindings(false);
 
-            if (displayFilters.Count > 0)
-            {
-                bs.DataSource = displayFilters;
-                bs.ResetBindings(false);
-            }
-        }
+        bs.ResetBindings(false);
 
         if (displayFilters.Count <= 0)
         {
@@ -433,6 +442,7 @@ public partial class FilterSettings : Form
 
     private void SearchBar_TextChanged(object sender, EventArgs e)
     {
+        SearchBar.BackColor = (SearchBar.Text.Length > 0) ? SearchActiveColor : SearchInactiveColor;
         ResetActiveFilters();
         RefreshSelectedFilter();
     }
