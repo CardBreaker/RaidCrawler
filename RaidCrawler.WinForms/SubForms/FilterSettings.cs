@@ -1,3 +1,4 @@
+using NLog.Filters;
 using PKHeX.Core;
 using RaidCrawler.Core.Structures;
 using System.Collections;
@@ -38,10 +39,6 @@ public partial class FilterSettings : Form
         SpdComp.SelectedIndex = 0;
         SpeComp.SelectedIndex = 0;
 
-        bs.DataSource = displayFilters;
-        ActiveFilters.DataSource = bs;
-        ActiveFilters.DisplayMember = "Name";
-
         ResetActiveFilters();
         if (ActiveFilters.Items.Count > 0)
             ActiveFilters.SelectedIndex = 0;
@@ -51,24 +48,18 @@ public partial class FilterSettings : Form
 
     public void ResetActiveFilters()
     {
-        // Seems like a .NET bug - ResetBindings() won't do anything even
-        // if the filters changed unless its reference changes.
-        bs.DataSource = null;
-
-        if (displayFilters.Count > 0)
+        if (bs.DataSource == null)
         {
-            bs.DataSource = displayFilters;
+            bs.DataSource = allFilters;
+            ActiveFilters.DataSource = bs;
+            ActiveFilters.DisplayMember = "Name";
         }
-
-        bs.ResetBindings(false);
-
-        if (displayFilters.Count <= 0)
+        else
         {
-            ActiveFilters.SelectedIndex = -1;
+            bs.ResetBindings(false);
         }
-
-        for (int i = 0; i < displayFilters.Count; i++)
-            ActiveFilters.SetItemChecked(i, displayFilters[i].Enabled);
+        for (int i = 0; i < allFilters.Count; i++)
+            ActiveFilters.SetItemChecked(i, allFilters[i].Enabled);
     }
 
     public void SelectFilter(RaidFilter filter)

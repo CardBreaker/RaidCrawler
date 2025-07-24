@@ -1248,7 +1248,7 @@ namespace RaidCrawler.WinForms.SubForms
             this.linkLabel2.Size = new System.Drawing.Size(265, 15);
             this.linkLabel2.TabIndex = 5;
             this.linkLabel2.TabStop = true;
-            this.linkLabel2.Text = "https://github.com/ViolentSpatula/RaidCrawlerV";
+            this.linkLabel2.Text = "https://github.com/CardBreaker/RaidCrawler";
             linkLabel2.LinkClicked += linkLabel2_LinkClicked;
             // 
             // linkLabel1
