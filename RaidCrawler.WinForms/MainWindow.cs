@@ -80,6 +80,8 @@ public partial class MainWindow : Form
     private bool StopAdvances =>
         !Config.EnableFilters || RaidFilters.Count == 0 || RaidFilters.All(x => !x.Enabled);
 
+    private readonly Version CurrentVersion = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version!;
+
     public MainWindow()
     {
         Config = new ClientConfig();
@@ -89,7 +91,7 @@ public partial class MainWindow : Form
 #else
         var build = "";
 #endif
-        var v = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version!;
+        var v = CurrentVersion;
         var filterPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "filters.json");
         if (File.Exists(filterPath))
             RaidFilters = JsonSerializer.Deserialize<List<RaidFilter>>(File.ReadAllText(filterPath)) ?? [];
@@ -222,6 +224,7 @@ public partial class MainWindow : Form
         DefaultColor = IVs.BackColor;
         RaidBoost.SelectedIndex = 0;
         ToggleStreamerView();
+        CheckForUpdates();
     }
 
     private void InputSwitchIP_Changed(object sender, EventArgs e)
@@ -367,7 +370,7 @@ public partial class MainWindow : Form
                     return;
                 }
 
-                ButtonEnable(true, ButtonAdvanceDate, ButtonReadRaids, ButtonDisconnect, ButtonViewRAM, ButtonDownloadEvents, SendScreenshot, btnOpenMap, Rewards, CopyAnnounce, ButtonScreenState, ButtonResetTime);
+                ButtonEnable(true, ButtonAdvanceDate, ButtonReadRaids, ButtonDisconnect, ButtonViewRAM, ButtonDownloadEvents, SendScreenshot, btnOpenMap, Rewards, CopyAnnounce, ButtonScreenState, ButtonDateTools);
                 if (InvokeRequired)
                 {
                     Invoke(() =>
@@ -403,7 +406,7 @@ public partial class MainWindow : Form
         Task.Run(
             async () =>
             {
-                ButtonEnable(false, ButtonAdvanceDate, ButtonReadRaids, ButtonDisconnect, ButtonViewRAM, ButtonDownloadEvents, SendScreenshot, ButtonResetTime);
+                ButtonEnable(false, ButtonAdvanceDate, ButtonReadRaids, ButtonDisconnect, ButtonViewRAM, ButtonDownloadEvents, SendScreenshot, ButtonDateTools);
                 try
                 {
                     (bool success, string err) = await ConnectionWrapper
@@ -869,11 +872,11 @@ public partial class MainWindow : Form
         Config.EnableFilters = CheckEnableFilters.Checked;
     }
 
+    private readonly JsonSerializerOptions options = new() { WriteIndented = true };
     private void MainWindow_FormClosing(object sender, FormClosingEventArgs e)
     {
         Config.Location = Location;
         var configpath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "config.json");
-        JsonSerializerOptions options = new() { WriteIndented = true };
         string output = JsonSerializer.Serialize(Config, options);
         using StreamWriter sw = new(configpath);
         sw.Write(output);
@@ -1002,13 +1005,14 @@ public partial class MainWindow : Form
             statsPanel.BackgroundImage = (Config.MapBackground ? map : null);
             ///vio thing
 
-            var strings = GameInfo.GetStrings(1);
+            var strings = GameInfo.GetStrings("en");
             var param = encounter.GetParam();
             var blank = new PK9 { Species = encounter.Species, Form = encounter.Form };
 
-            Encounter9RNG.GenerateData(blank, param, EncounterCriteria.Unrestricted, raid.Seed);
+            raid.GenerateDataPK9(blank, param, encounter.Shiny, raid.Seed);
+
             var img = blank.Sprite();
-            img = ApplyTeraColor((byte)teraType, img, SpriteBackgroundType.BottomStripe);
+            img = (Bitmap)ApplyTeraColor((byte)teraType, img, SpriteBackgroundType.BottomStripe);
 
             var form = Utils.GetFormString(blank.Species, blank.Form, strings);
 
@@ -1018,7 +1022,7 @@ public partial class MainWindow : Form
             Gender.Text = $"{(Gender)blank.Gender}";
 
             var nature = blank.Nature;
-            Nature.Text = $"{RaidContainer.Strings.Natures[nature]}";
+            Nature.Text = $"{RaidContainer.Strings.Natures[(int)nature]}";
             Ability.Text = $"{RaidContainer.Strings.Ability[blank.Ability]}";
             Scale.Text = $"{PokeSizeDetailedUtil.GetSizeRating(blank.Scale)} ({blank.Scale})";
 
@@ -1042,8 +1046,10 @@ public partial class MainWindow : Form
                 ? RaidContainer.Strings.Move[extraMoves[3]]
                 : RaidContainer.Strings.Move[encounter.Move4];
 
-            IVs.Text = IVsString(Utils.ToSpeedLast(blank.IVs));
-            toolTip.SetToolTip(IVs, IVsString(Utils.ToSpeedLast(blank.IVs), true));
+            Span<int> _ivs = stackalloc int[6];
+            blank.GetIVs(_ivs);
+            IVs.Text = IVsString(Utils.ToSpeedLast(_ivs));
+            toolTip.SetToolTip(IVs, IVsString(Utils.ToSpeedLast(_ivs), true));
 
             shinyBox.Image = raid.CheckIsShiny(encounter) ? (ShinyExtensions.IsSquareShinyExist(blank) ? Properties.Resources.square : Properties.Resources.shiny) : null;
             shinyBox.SizeMode = PictureBoxSizeMode.Zoom;
@@ -1157,7 +1163,8 @@ public partial class MainWindow : Form
             var param = encounter.GetParam();
             var blank = new PK9 { Species = encounter.Species, Form = encounter.Form };
 
-            Encounter9RNG.GenerateData(blank, param, EncounterCriteria.Unrestricted, raid.Seed);
+            raid.GenerateDataPK9(blank, param, encounter.Shiny, raid.Seed);
+
             var img = blank.Sprite();
 
             teraRaidView.picBoxPokemon.Image = img;
@@ -1168,7 +1175,7 @@ public partial class MainWindow : Form
             teraRaidView.Gender.Text = $"{(Gender)blank.Gender}";
 
             var nature = blank.Nature;
-            teraRaidView.Nature.Text = $"{RaidContainer.Strings.Natures[nature]}";
+            teraRaidView.Nature.Text = $"{RaidContainer.Strings.Natures[(int)nature]}";
             teraRaidView.Ability.Text = $"{RaidContainer.Strings.Ability[blank.Ability]}";
 
             teraRaidView.Move1.Text =
@@ -1194,7 +1201,9 @@ public partial class MainWindow : Form
             teraRaidView.Move8.Text =
                 extraMoves[3] > 0 ? RaidContainer.Strings.Move[extraMoves[3]] : "---";
 
-            var ivs = Utils.ToSpeedLast(blank.IVs);
+            Span<int> _ivs = stackalloc int[6];
+            blank.GetIVs(_ivs);
+            var ivs = Utils.ToSpeedLast(_ivs);
 
             // HP
             teraRaidView.HP.Text = $"{ivs[0]:D2}";
@@ -1428,20 +1437,20 @@ public partial class MainWindow : Form
         var original = PKHeX.Drawing.Misc.TypeSpriteUtil.GetTypeSpriteGem((byte)teratype);
         if (original == null)
             return null;
-        var gem = (Image)new Bitmap(original, new Size(30, 30));
+        var gemBitmap = new Bitmap(original, new Size(30, 30));
+        var gem = (Image)gemBitmap;
         var gem2 = (Image)new Bitmap(original, new Size(30, 30));
         SpriteUtil.GetSpriteGlow(gem, 0xFF, 0xFF, 0xFF, out var glow, true);
         SpriteUtil.GetSpriteGlow(gem, 0xCC, 0xCC, 0xCC, out var glow2, true);
         gem = ImageUtil.LayerImage(gem, ImageUtil.GetBitmap(glow, gem.Width, gem.Height, gem.PixelFormat), 0, 0);
         gem2 = ImageUtil.LayerImage(gem, ImageUtil.GetBitmap(glow2, gem.Width, gem.Height, gem.PixelFormat), 0, 0);
 
-        if (
-            DenLocationsBase is null
-            || DenLocationsBase.Count == 0
-            || DenLocationsKitakami is null
-            || DenLocationsKitakami.Count == 0
-        )
+        if (DenLocationsBase is null || DenLocationsBase.Count == 0 ||
+            DenLocationsKitakami is null || DenLocationsKitakami.Count == 0 ||
+            DenLocationsBlueberry is null || DenLocationsBlueberry.Count == 0)
+        {
             return null;
+        }
 
         var locData = raid.MapParent switch
         {
@@ -1457,8 +1466,8 @@ public partial class MainWindow : Form
         };
         try
         {
-            (double x, double y) = GetCoordinate(raid, locData);
-            return ImageUtil.LayerImage(map, gem, (int)x, (int)y);
+            (double x, double z) = GetCoordinate(raid, locData, gemBitmap);
+            return ImageUtil.LayerImage(map, gem, (int)x, (int)z);
         }
         catch
         {
@@ -1466,19 +1475,20 @@ public partial class MainWindow : Form
         }
     }
 
-    private static (double x, double y) GetCoordinate(Raid raid, IReadOnlyDictionary<string, float[]> locData)
+    private static (double x, double y) GetCoordinate(Raid raid, IReadOnlyDictionary<string, float[]> locData, Bitmap gem)
     {
         var m = MapMagic.GetMapMagic(raid.MapParent);
-        double x = ((m.MultX * locData[$"{raid.Area}-{raid.LotteryGroup}-{raid.Den}"][0]) + m.AddX) * m.MultConst / m.DivConst;
-        double y = ((m.MultY * locData[$"{raid.Area}-{raid.LotteryGroup}-{raid.Den}"][2]) + m.AddY) * m.MultConst / m.DivConst;
-        return (x, y);
+        double x = m.ConvertX(locData[$"{raid.Area}-{raid.LotteryGroup}-{raid.Den}"][0]) - (gem.Size.Width / 2);
+        double z = m.ConvertZ(locData[$"{raid.Area}-{raid.LotteryGroup}-{raid.Den}"][2]) - (gem.Size.Height / 2);
+
+        return (x, z);
     }
 
     private bool StopAdvanceDate(IEnumerable<uint> previousSeeds)
     {
         var raids = RaidContainer.Raids;
         var rewards = RaidContainer.Rewards;
-        var strings = GameInfo.GetStrings(1);
+        var strings = GameInfo.GetStrings("en");
         var curSeeds = raids.Select(x => x.Seed).ToArray();
         var sameRaids = curSeeds.Except(previousSeeds).ToArray().Length == 0;
 
@@ -1718,7 +1728,7 @@ public partial class MainWindow : Form
         var nameList = new List<String>();
         var raids = RaidContainer.Raids;
         var encounters = RaidContainer.Encounters;
-        var strings = GameInfo.GetStrings(1);
+        var strings = GameInfo.GetStrings("en");
 
         for (var i = 0; raids.Count > i; i++)
         {
@@ -2088,20 +2098,58 @@ public partial class MainWindow : Form
         }
     }
 
-    private void B_ResetTime_Click(object sender, EventArgs e)
+    private void B_DateTools_Click(object sender, EventArgs e)
     {
         Task.Run(async () =>
         {
             try
             {
-                UpdateStatus("Resetting date");
-                await ConnectionWrapper.ResetTime(Source.Token).ConfigureAwait(false);
-                UpdateStatus("Date reset");
+                var tick = await ConnectionWrapper.GetCurrentTime(Source.Token).ConfigureAwait(false);
+                var form = new TickModifier(tick, ConnectionWrapper, Webhook, Source.Token);
+                ShowDialog(form);
             }
             catch (Exception ex)
             {
-                await this.DisplayMessageBox(Webhook, $"Could not reset the date: {ex.Message}", Source.Token).ConfigureAwait(false);
+                await this.DisplayMessageBox(Webhook, $"Could not read the date: {ex.Message}", Source.Token).ConfigureAwait(false);
             }
         });
+    }
+
+
+    private void CheckForUpdates()
+    {
+        Task.Run(async () =>
+        {
+            Version? latestVersion;
+            try { latestVersion = Utils.GetLatestVersion(); }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Exception while checking for latest version: {ex}");
+                return;
+            }
+
+            if (latestVersion is null || latestVersion <= CurrentVersion)
+                return;
+
+            while (!IsHandleCreated) // Wait for form to be ready
+                await Task.Delay(2_000).ConfigureAwait(false);
+            await InvokeAsync(() => NotifyNewVersionAvailable(latestVersion));
+        });
+    }
+
+    private void NotifyNewVersionAvailable(Version version)
+    {
+        Text += $" - Update v{version.Major}.{version.Minor}.{version.Build} available!";
+        UpdateStatus($"Update v{version.Major}.{version.Minor}.{version.Build} available!");
+#if !DEBUG
+        using UpdateNotifPopup nup = new(CurrentVersion, version);
+        if (nup.ShowDialog() == DialogResult.OK)
+        {
+            Process.Start(new ProcessStartInfo("https://github.com/CardBreaker/RaidCrawler/releases/")
+            {
+                UseShellExecute = true
+            });
+        }
+#endif
     }
 }

@@ -11,7 +11,7 @@ public partial class FilterSettings : Form
     private readonly List<RaidFilter> allFilters;
     private readonly RaidFilterCollection displayFilters;
 
-    private readonly BindingSource bs = new();
+    private readonly BindingSource bs = [];
 
     private readonly Color SearchActiveColor = Color.Aquamarine;
     private readonly Color SearchInactiveColor = Color.Empty;
@@ -21,13 +21,11 @@ public partial class FilterSettings : Form
         InitializeComponent();
         allFilters = filters;
         displayFilters = new RaidFilterCollection(ref allFilters, SearchBar);
-        Species.DataSource = Enum.GetValues(typeof(Species))
-            .Cast<Species>()
+        Species.DataSource = Enum.GetValues<Species>()
             .Where(z => z != PKHeX.Core.Species.MAX_COUNT)
             .ToArray();
-        Nature.DataSource = Enum.GetValues(typeof(Nature));
-        TeraType.DataSource = Enum.GetValues(typeof(MoveType))
-            .Cast<MoveType>()
+        Nature.DataSource = Enum.GetValues<Nature>();
+        TeraType.DataSource = Enum.GetValues<MoveType>()
             .Where(z => z != MoveType.Any)
             .ToArray();
 
@@ -381,7 +379,7 @@ public partial class FilterSettings : Form
         using ItemIDs form = new(IDs);
         if (form.ShowDialog() != DialogResult.OK)
             return;
-        List<int> s = new();
+        List<int> s = [];
         if (form.CheckAbilityCapsule.Checked)
             s.Add(645);
         if (form.CheckBottleCap.Checked)

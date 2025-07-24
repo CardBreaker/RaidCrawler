@@ -44,7 +44,7 @@ namespace RaidCrawler.WinForms
             ButtonPrevious = new Button();
             ButtonReadRaids = new Button();
             ButtonViewRAM = new Button();
-            ButtonResetTime = new Button();
+            ButtonDateTools = new Button();
             StopFilter = new Button();
             Sprite = new PictureBox();
             GemIcon = new PictureBox();
@@ -294,16 +294,16 @@ namespace RaidCrawler.WinForms
             ButtonDownloadEvents.UseVisualStyleBackColor = true;
             ButtonDownloadEvents.Click += DownloadEvents_Click;
             //
-            // ButtonResetTime
+            // ButtonDateTools
             //
-            ButtonResetTime.Enabled = false;
-            ButtonResetTime.Location = new Point(9, 99);
-            ButtonResetTime.Name = "ButtonResetTime";
-            ButtonResetTime.Size = new Size(90, 25);
-            ButtonResetTime.TabIndex = 130;
-            ButtonResetTime.Text = "Reset Date";
-            ButtonResetTime.UseVisualStyleBackColor = true;
-            ButtonResetTime.Click += B_ResetTime_Click;
+            ButtonDateTools.Enabled = false;
+            ButtonDateTools.Location = new Point(9, 99);
+            ButtonDateTools.Name = "ButtonDateTools";
+            ButtonDateTools.Size = new Size(90, 25);
+            ButtonDateTools.TabIndex = 130;
+            ButtonDateTools.Text = "Date Tools";
+            ButtonDateTools.UseVisualStyleBackColor = true;
+            ButtonDateTools.Click += B_DateTools_Click;
             // 
             // ConfigSettings
             // 
@@ -392,7 +392,7 @@ namespace RaidCrawler.WinForms
             groupBox1.Controls.Add(btnOpenMap);
             groupBox1.Controls.Add(SendScreenshot);
             groupBox1.Controls.Add(ButtonReadRaids);
-            groupBox1.Controls.Add(ButtonResetTime);
+            groupBox1.Controls.Add(ButtonDateTools);
             groupBox1.Location = new Point(6, 274);
             groupBox1.Name = "groupBox1";
             groupBox1.Size = new Size(200, 131);
@@ -1036,7 +1036,7 @@ namespace RaidCrawler.WinForms
         private Button ButtonReadRaids;
         private Button ButtonAdvanceDate;
         private Button ButtonViewRAM;
-        private Button ButtonResetTime;
+        private Button ButtonDateTools;
         private Button StopFilter;
         private PictureBox Sprite;
         private PictureBox GemIcon;

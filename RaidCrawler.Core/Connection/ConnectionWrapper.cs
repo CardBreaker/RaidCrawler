@@ -229,6 +229,26 @@ public class ConnectionWrapperAsync(SwitchConnectionConfig Config, Action<string
         await Connection.SendAsync(command, token).ConfigureAwait(false);
     }
 
+    public async Task ResetTimeNTP(CancellationToken token)
+    {
+        var command = Encoding.ASCII.GetBytes($"resetTimeNTP{(CRLF ? "\r\n" : "")}");
+        await Connection.SendAsync(command, token).ConfigureAwait(false);
+    }
+
+    public async Task<ulong> GetCurrentTime(CancellationToken token)
+    {
+        var command = Encoding.ASCII.GetBytes($"getCurrentTime{(CRLF ? "\r\n" : "")}");
+        var res = await Connection.ReadRaw(command, 17, token).ConfigureAwait(false);
+        ulong.TryParse(Encoding.ASCII.GetString(res).Trim('\n'), System.Globalization.NumberStyles.AllowHexSpecifier, null, out var time);
+        return time;
+    }
+
+    public async Task SetCurrentTime(ulong date, CancellationToken token)
+    {
+        var command = Encoding.ASCII.GetBytes($"setCurrentTime {date}{(CRLF ? "\r\n" : "")}");
+        await Connection.SendAsync(command, token).ConfigureAwait(false);
+    }
+
     // Thank you to Anubis for sharing a more optimized routine, as well as CloseGame(), StartGame(), and SaveGame()!
     public async Task AdvanceDate(
         IDateAdvanceConfig config,
@@ -290,7 +310,7 @@ public class ConnectionWrapperAsync(SwitchConnectionConfig Config, Action<string
             // Navigate to Settings
             if (config.UseTouch)
             {
-                await Touch(0_840, 0_540, 0_050, 0, token).ConfigureAwait(false);
+                await Touch(0_909, 0_540, 0_050, 0, token).ConfigureAwait(false);
                 UpdateProgressBar(action, steps);
             }
             else
@@ -299,7 +319,7 @@ public class ConnectionWrapperAsync(SwitchConnectionConfig Config, Action<string
                     .ConfigureAwait(false);
                 UpdateProgressBar(action, steps);
 
-                for (int i = 0; i < 5; i++)
+                for (int i = 0; i < 7; i++)
                 {
                     await Click(DRIGHT, config.NavigateToSettingsDelay + BaseDelay, token)
                         .ConfigureAwait(false);

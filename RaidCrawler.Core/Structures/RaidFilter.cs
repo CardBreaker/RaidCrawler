@@ -1,5 +1,6 @@
 using System.Diagnostics.Metrics;
 using PKHeX.Core;
+using System.Diagnostics.Metrics;
 
 namespace RaidCrawler.Core.Structures;
 
@@ -13,6 +14,7 @@ public class RaidFilter
     public int StarsComp { get; set; }
     public bool Shiny { get; set; }
     public bool Square { get; set; }
+    public bool RareEC { get; set; }
     public int? Nature { get; set; }
     public int? TeraType { get; set; }
     public int? Gender { get; set; }
@@ -32,6 +34,7 @@ public class RaidFilter
                               || Stars != null
                               || Shiny
                               || Square
+                              || RareEC
                               || Nature != null
                               || TeraType != null
                               || Gender != null
@@ -113,6 +116,14 @@ public class RaidFilter
         return blank.IsShiny && ShinyExtensions.IsSquareShinyExist(blank);
     }
 
+    public bool IsRareECSatisfied(PK9 blank)
+    {
+        if (!RareEC)
+            return true;
+
+        return blank.EncryptionConstant % 100 == 0;
+    }
+
     public bool IsTeraTypeSatisfied(Raid raid, ITeraRaid enc)
     {
         if (TeraType is null)
@@ -134,7 +145,9 @@ public class RaidFilter
         if (IVBin == 0)
             return true;
 
-        var ivs = Utils.ToSpeedLast(blank.IVs);
+        Span<int> _ivs = stackalloc int[6];
+        blank.GetIVs(_ivs);
+        var ivs = Utils.ToSpeedLast(_ivs);
         for (int i = 0; i < 6; i++)
         {
             var iv = IVVals >> i * 5 & 31;
@@ -238,16 +251,18 @@ public class RaidFilter
     {
         var param = enc.GetParam();
         var blank = new PK9 { Species = enc.Species, Form = enc.Form };
-        Encounter9RNG.GenerateData(blank, param, EncounterCriteria.Unrestricted, raid.Seed);
+
+        raid.GenerateDataPK9(blank, param, enc.Shiny, raid.Seed);
 
         return Enabled
                && IsIVsSatisfied(blank)
                && IsShinySatisfied(blank)
                && IsSquareSatisfied(blank)
+               && IsRareECSatisfied(blank)
                && IsSpeciesSatisfied(blank.Species)
                && IsRareVariantSatisfied(raid)
                && IsFormSatisfied(blank.Form)
-               && IsNatureSatisfied(blank.Nature)
+               && IsNatureSatisfied((int)blank.Nature)
                && IsStarsSatisfied(enc)
                && IsTeraTypeSatisfied(raid, enc)
                && IsRewardsSatisfied(container, enc, raid, SandwichBoost)

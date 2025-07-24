@@ -51,7 +51,7 @@
             MinimizeBox = false;
             Name = "MapView";
             StartPosition = FormStartPosition.CenterParent;
-            Text = "Possible Den Location(s)";
+            Text = "Raid Location";
             ((System.ComponentModel.ISupportInitialize)Map).EndInit();
             ResumeLayout(false);
         }

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Drawing.Drawing2D;
@@ -65,6 +65,7 @@ public class TransparentTextBox : TextBox
 public class MyPanel : Panel
 {
     [Browsable(true)]
+    [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
     public Color border { get; set; }
 
     public MyPanel()
@@ -84,7 +85,10 @@ public class MyPanel : Panel
 public class RoundLabel : Label
 {
     [Browsable(true)]
+    [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
     public Color backColor { get; set; }
+
+    [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
     public Color backColor2 { get; set; }
 
     public RoundLabel()

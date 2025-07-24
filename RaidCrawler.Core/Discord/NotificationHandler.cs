@@ -85,7 +85,7 @@ public class NotificationHandler
 
     protected object GenerateWebhook(ITeraRaid encounter, Raid raid, RaidFilter filter, string time, IReadOnlyList<(int, int, int)> rewardsList, string hexColor, string spriteName, string eventType = "webhook")
     {
-        var strings = GameInfo.GetStrings(1);
+        var strings = GameInfo.GetStrings("en");
         var param = encounter.GetParam();
         var blank = new PK9
         {
@@ -93,12 +93,13 @@ public class NotificationHandler
             Form = encounter.Form
         };
 
-        Encounter9RNG.GenerateData(blank, param, EncounterCriteria.Unrestricted, raid.Seed);
+        raid.GenerateDataPK9(blank, param, encounter.Shiny, raid.Seed);
+
         var form = Utils.GetFormString(blank.Species, blank.Form, strings);
         var species = $"{strings.Species[encounter.Species]}";
         var rarevariant = $"{(raid.EC % 100 == 0 && (encounter!.Species == 924 || encounter.Species == 206) ? " Rare Variant" : "")}";
         var difficulty = Difficulty(encounter.Stars, raid.IsEvent, eventType);
-        var nature = $"{strings.Natures[blank.Nature]}";
+        var nature = $"{strings.Natures[(int)blank.Nature]}";
         var ability = $"{strings.Ability[blank.Ability]}";
         var shiny = Shiny(
             raid.CheckIsShiny(encounter),
@@ -109,7 +110,9 @@ public class NotificationHandler
         var teratype = raid.GetTeraType(encounter);
         var tera = $"{strings.types[teratype]}";
         var teraemoji = TeraEmoji(strings.types[teratype], eventType);
-        var ivs = IVsStringEmoji(ToSpeedLast(blank.IVs), eventType);
+        Span<int> _ivs = stackalloc int[6];
+        blank.GetIVs(_ivs);
+        var ivs = IVsStringEmoji(ToSpeedLast(_ivs), eventType);
         var perfectIvCount = blank.IVs.Count(iv => iv == 31);
         var moves = new ushort[4]
         {
@@ -354,7 +357,7 @@ public class NotificationHandler
         return s;
     }
 
-    protected static int[] ToSpeedLast(int[] ivs)
+    protected static int[] ToSpeedLast(ReadOnlySpan<int> ivs)
     {
         var res = new int[6];
         res[0] = ivs[0];
