@@ -1543,12 +1543,13 @@ public partial class MainWindow : Form
                 Gender = encounters[i].Gender,
             };
             blank.SetSuggestedFormArgument();
-            Encounter9RNG.GenerateData(blank, param, EncounterCriteria.Unrestricted, raid.Seed);
+            raid.GenerateDataPK9(blank, param, encounter.Shiny, raid.Seed);
             var spriteName = GetSpriteNameForUrl(blank, raids[i].CheckIsShiny(encounters[i]));
             var form = Utils.GetFormString(blank.Species, blank.Form, strings);
             var species = $"{strings.Species[encounter.Species]}";
             var shiny = $"{(raid.CheckIsShiny(encounter) ? (ShinyExtensions.IsSquareShinyExist(blank) ? "⛋" : "☆") : "")}";
-            if (raids[i].CheckIsShiny(encounters[i]))
+            if (raids[i].CheckIsShiny(encounters[i]) &&
+                !raids[i].IsEvent) // Exclude shiny event raids
             {
                 StatShinyCount++;
                 Fomo.Add($"{shiny} {species}{form}");
@@ -1740,7 +1741,7 @@ public partial class MainWindow : Form
                 Species = encounter.Species,
                 Form = encounter.Form
             };
-            Encounter9RNG.GenerateData(blank, param, EncounterCriteria.Unrestricted, raid.Seed);
+            raid.GenerateDataPK9(blank, param, encounter.Shiny, raid.Seed);
             var form = Utils.GetFormString(blank.Species, blank.Form, strings);
             var species = $"{strings.Species[encounter.Species]}";
             var shiny = $"{(raid.CheckIsShiny(encounter) ? (ShinyExtensions.IsSquareShinyExist(blank) ? "⛋" : "☆") : "")}";

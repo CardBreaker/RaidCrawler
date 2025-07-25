@@ -181,7 +181,7 @@ public class RaidFilter
             Species = enc.Species,
             Form = enc.Form
         };
-        Encounter9RNG.GenerateData(blank, param, EncounterCriteria.Unrestricted, raid.Seed);
+        raid.GenerateDataPK9(blank, param, enc.Shiny, raid.Seed);
         var size = $"{PokeSizeDetailedUtil.GetSizeRating(blank.Scale)}";
         var result = 0;
         switch (size)
