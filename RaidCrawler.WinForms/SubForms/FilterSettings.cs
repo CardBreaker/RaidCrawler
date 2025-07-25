@@ -48,18 +48,23 @@ public partial class FilterSettings : Form
 
     public void ResetActiveFilters()
     {
-        if (bs.DataSource == null)
+        // Seems like a .NET bug - ResetBindings() won't do anything even
+        // if the filters changed unless its reference changes.
+        bs.DataSource = null;
+
+        if (displayFilters.Count > 0)
         {
-            bs.DataSource = allFilters;
+            bs.DataSource = displayFilters;
             ActiveFilters.DataSource = bs;
             ActiveFilters.DisplayMember = "Name";
         }
-        else
-        {
-            bs.ResetBindings(false);
-        }
-        for (int i = 0; i < allFilters.Count; i++)
-            ActiveFilters.SetItemChecked(i, allFilters[i].Enabled);
+
+        bs.ResetBindings(false);
+
+        for (int i = 0; i < displayFilters.Count; i++)
+            ActiveFilters.SetItemChecked(i, displayFilters[i].Enabled);
+
+        UpdateModifyFilterButtonText();
     }
 
     public void SelectFilter(RaidFilter filter)
@@ -328,6 +333,7 @@ public partial class FilterSettings : Form
         var idx = ActiveFilters.SelectedIndex;
         displayFilters.RemoveAt(idx);
         ResetActiveFilters();
+        RefreshSelectedFilter();
     }
 
     private void ActiveFilters_SelectedIndexChanged(object sender, EventArgs e)
@@ -348,12 +354,17 @@ public partial class FilterSettings : Form
         displayFilters[e.Index].Enabled = e.NewValue == CheckState.Checked;
     }
 
-    private void FilterName_TextChanged(object sender, EventArgs e)
+    private void UpdateModifyFilterButtonText()
     {
         if (allFilters.Any(filter => filter.Name == FilterName.Text))
             Add.Text = "Update Filter";
         else
             Add.Text = "Add Filter";
+    }
+
+    private void FilterName_TextChanged(object sender, EventArgs e)
+    {
+        UpdateModifyFilterButtonText();
     }
 
     private void CheckRewards_CheckedChanged(object sender, EventArgs e)
