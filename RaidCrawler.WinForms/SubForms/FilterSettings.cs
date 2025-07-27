@@ -88,6 +88,7 @@ public partial class FilterSettings : Form
         SizeCheck.Checked = filter.Size != null;
         ShinyCheck.Checked = filter.Shiny;
         SquareCheck.Checked = filter.Square;
+        ExcludeEvent.Checked = filter.EventExcluded;
         CheckRewards.Checked = filter is { RewardItems: not null, RewardsCount: > 0 };
         Rewards.Text = filter.RewardItems != null
             ? string.Join(",", filter.RewardItems.Select(x => x.ToString()).ToArray())
@@ -193,6 +194,7 @@ public partial class FilterSettings : Form
         filter.Size = SizeCheck.Checked ? SizeBox.SelectedIndex : null;
         filter.Shiny = ShinyCheck.Checked;
         filter.Square = SquareCheck.Checked;
+        filter.EventExcluded = ExcludeEvent.Checked;
         filter.IVBin = ivbin;
         filter.IVVals = ivvals;
         filter.IVComps = ivcomps;

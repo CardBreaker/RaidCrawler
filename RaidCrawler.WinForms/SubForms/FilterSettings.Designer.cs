@@ -83,6 +83,7 @@ namespace RaidCrawler.WinForms.SubForms
             RareVariant = new CheckBox();
             SearchBarLabel = new Label();
             SearchBar = new TextBox();
+            ExcludeEvent = new CheckBox();
             ((System.ComponentModel.ISupportInitialize)Form).BeginInit();
             PerfectIVFilterGroup.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)IVSPE).BeginInit();
@@ -191,7 +192,7 @@ namespace RaidCrawler.WinForms.SubForms
             // 
             // Add
             // 
-            Add.Location = new Point(12, 469);
+            Add.Location = new Point(12, 499);
             Add.Name = "Add";
             Add.Size = new Size(132, 23);
             Add.TabIndex = 9;
@@ -219,7 +220,7 @@ namespace RaidCrawler.WinForms.SubForms
             PerfectIVFilterGroup.Controls.Add(Def);
             PerfectIVFilterGroup.Controls.Add(Atk);
             PerfectIVFilterGroup.Controls.Add(HP);
-            PerfectIVFilterGroup.Location = new Point(12, 339);
+            PerfectIVFilterGroup.Location = new Point(12, 369);
             PerfectIVFilterGroup.Name = "PerfectIVFilterGroup";
             PerfectIVFilterGroup.Size = new Size(270, 124);
             PerfectIVFilterGroup.TabIndex = 10;
@@ -502,7 +503,7 @@ namespace RaidCrawler.WinForms.SubForms
             // 
             // Remove
             // 
-            Remove.Location = new Point(150, 468);
+            Remove.Location = new Point(150, 498);
             Remove.Name = "Remove";
             Remove.Size = new Size(132, 23);
             Remove.TabIndex = 23;
@@ -667,12 +668,22 @@ namespace RaidCrawler.WinForms.SubForms
             RareVariant.Text = "Rare Variant";
             RareVariant.UseVisualStyleBackColor = true;
             RareVariant.Visible = false;
+            //
+            // ExcludeEvent
+            //
+            ExcludeEvent.AutoSize = true;
+            ExcludeEvent.Location = new Point(15, 344);
+            ExcludeEvent.Name = "ExcludeEvent";
+            ExcludeEvent.Size = new Size(100, 19);
+            ExcludeEvent.TabIndex = 40;
+            ExcludeEvent.Text = "Exclude Events?";
+            ExcludeEvent.UseVisualStyleBackColor = true;
             // 
             // FilterSettings
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(502, 505);
+            ClientSize = new Size(502, 535);
             Controls.Add(RareVariant);
             Controls.Add(SizeCheck);
             Controls.Add(SizeBox);
@@ -707,6 +718,7 @@ namespace RaidCrawler.WinForms.SubForms
             Controls.Add(Form);
             Controls.Add(SpeciesCheck);
             Controls.Add(Species);
+            Controls.Add(ExcludeEvent);
             FormBorderStyle = FormBorderStyle.FixedDialog;
             MaximizeBox = false;
             MinimizeBox = false;
@@ -783,5 +795,6 @@ namespace RaidCrawler.WinForms.SubForms
         private CheckBox RareVariant;
         private Label SearchBarLabel;
         private TextBox SearchBar;
+        private CheckBox ExcludeEvent;
     }
 }
