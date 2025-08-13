@@ -7,19 +7,17 @@ namespace RaidCrawler.WinForms.SubForms;
 public partial class FilterSettings : Form
 {
     private readonly List<RaidFilter> filters;
-    private readonly BindingSource bs = new();
+    private readonly BindingSource bs = [];
 
     public FilterSettings(ref List<RaidFilter> filters)
     {
         InitializeComponent();
         this.filters = filters;
-        Species.DataSource = Enum.GetValues(typeof(Species))
-            .Cast<Species>()
+        Species.DataSource = Enum.GetValues<Species>()
             .Where(z => z != PKHeX.Core.Species.MAX_COUNT)
             .ToArray();
-        Nature.DataSource = Enum.GetValues(typeof(Nature));
-        TeraType.DataSource = Enum.GetValues(typeof(MoveType))
-            .Cast<MoveType>()
+        Nature.DataSource = Enum.GetValues<Nature>();
+        TeraType.DataSource = Enum.GetValues<MoveType>()
             .Where(z => z != MoveType.Any)
             .ToArray();
 
@@ -73,6 +71,7 @@ public partial class FilterSettings : Form
         GenderCheck.Checked = filter.Gender != null;
         ShinyCheck.Checked = filter.Shiny;
         SquareCheck.Checked = filter.Square;
+        ECCheck.Checked = filter.RareEC;
         CheckRewards.Checked = filter is { RewardItems: not null, RewardsCount: > 0 };
         Rewards.Text = filter.RewardItems != null
             ? string.Join(",", filter.RewardItems.Select(x => x.ToString()).ToArray())
@@ -174,6 +173,7 @@ public partial class FilterSettings : Form
         filter.Gender = GenderCheck.Checked ? Gender.SelectedIndex : null;
         filter.Shiny = ShinyCheck.Checked;
         filter.Square = SquareCheck.Checked;
+        filter.RareEC = ECCheck.Checked;
         filter.IVBin = ivbin;
         filter.IVVals = ivvals;
         filter.IVComps = ivcomps;
@@ -335,7 +335,7 @@ public partial class FilterSettings : Form
         using ItemIDs form = new(IDs);
         if (form.ShowDialog() != DialogResult.OK)
             return;
-        List<int> s = new();
+        List<int> s = [];
         if (form.CheckAbilityCapsule.Checked)
             s.Add(645);
         if (form.CheckBottleCap.Checked)
